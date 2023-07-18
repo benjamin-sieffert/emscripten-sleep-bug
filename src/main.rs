@@ -92,28 +92,37 @@ fn main() {
         if frame_time < u32::MAX as u128 {
             let fps = 1_000u32 / 60u32;
             if fps > frame_time as u32 {
-                let sleep_for = fps - frame_time as u32;
                 let sleep_start = Instant::now();
+                let mut sleep_for = fps - frame_time as u32;
 
-                #[cfg(target_os = "emscripten")]
-                emscripten::sleep(sleep_for);
+                loop {
+                    #[cfg(target_os = "emscripten")]
+                    emscripten::sleep(sleep_for);
 
-                #[cfg(not(target_os = "emscripten"))]
-                {
-                    std::thread::sleep(Duration::from_millis(sleep_for as u64));
-                }
+                    #[cfg(not(target_os = "emscripten"))]
+                    {
+                        std::thread::sleep(Duration::from_millis(sleep_for as u64));
+                    }
 
-                let elapsed = sleep_start.elapsed().as_millis() as u32;
-                if elapsed > sleep_for {
-                    eprintln!(
-                        "slept too long! wanted to sleep for {}, but slept for {}",
-                        sleep_for, elapsed
-                    );
-                } else if elapsed < sleep_for {
-                    println!(
-                        "woke up too early! wanted to sleep for {}, but slept for {}",
-                        sleep_for, elapsed
-                    );
+                    let elapsed = sleep_start.elapsed().as_millis() as u32;
+
+                    if elapsed < sleep_for {
+                        // println!(
+                        //     "woke up too early! wanted to sleep for {}, but slept for {}",
+                        //     sleep_for, elapsed
+                        // );
+                        sleep_for -= elapsed;
+                        continue;
+                    }
+
+                    if elapsed > sleep_for {
+                        eprintln!(
+                            "slept too long! wanted to sleep for {}, but slept for {}",
+                            sleep_for, elapsed
+                        );
+                    }
+
+                    break;
                 }
             }
         }
