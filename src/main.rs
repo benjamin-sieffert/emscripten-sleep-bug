@@ -11,7 +11,10 @@ use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 
 use std::path::Path;
+use std::thread;
+use std::time::Duration;
 use std::time::Instant;
+use std::time::SystemTime;
 
 fn main() {
     #[cfg(target_os = "emscripten")]
@@ -31,12 +34,7 @@ fn main() {
         .resizable()
         .build()
         .unwrap();
-    let mut canvas = window
-        .into_canvas()
-        .accelerated()
-        .present_vsync()
-        .build()
-        .unwrap();
+    let mut canvas = window.into_canvas().accelerated().build().unwrap();
     let texture_creator = canvas.texture_creator();
 
     // Initialize fonts
@@ -51,7 +49,7 @@ fn main() {
     #[cfg(target_os = "emscripten")]
     {
         emscripten::sleep(1500); // Just to demonstrate that the spinner works
-        emscripten::exec("let spinner = document.getElementById('spinner'); spinner.remove();");
+                                 //emscripten::exec("let spinner = document.getElementById('spinner'); spinner.remove();");
     }
 
     let mut event_pump = sdl_context.event_pump().unwrap();
@@ -93,33 +91,32 @@ fn main() {
         game_state.tick(&mut canvas, &texture_creator);
         canvas.present();
 
-        // Set framerate to ~60fps
-        #[cfg(not(target_os = "emscripten"))]
-        {
-            use std::thread;
-            use std::time::Duration;
-            let frame_time = (Instant::now() - t1).as_nanos();
-            if frame_time < u32::MAX as u128 {
-                let fps = 1_000_000_000u32 / 60u32;
-                if fps > frame_time as u32 {
-                    thread::sleep(Duration::new(0, fps - frame_time as u32));
-                }
-            }
-        }
-        #[cfg(target_os = "emscripten")]
-        {
-            let frame_time = (Instant::now() - t1).as_millis();
-            if frame_time < u32::MAX as u128 {
-                let fps = 1_000u32 / 60u32;
-                if fps > frame_time as u32 {
-                    emscripten::sleep(fps - frame_time as u32);
+        let frame_time = t1.elapsed().as_millis();
+        if frame_time < u32::MAX as u128 {
+            let fps = 1_000u32 / 60u32;
+            if fps > frame_time as u32 {
+                let x = SystemTime::now()
+                    .duration_since(SystemTime::UNIX_EPOCH)
+                    .unwrap()
+                    .as_millis();
+                let wf = fps - frame_time as u32;
+                #[cfg(target_os = "emscripten")]
+                emscripten::sleep(wf);
+                #[cfg(not(target_os = "emscripten"))]
+                thread::sleep(Duration::from_millis(wf as u64));
+
+                let x2 = SystemTime::now()
+                    .duration_since(SystemTime::UNIX_EPOCH)
+                    .unwrap()
+                    .as_millis();
+
+                let rreal = (x2 - x) as u32;
+                if rreal != wf {
+                    println!("wanted {}, got {}  --- {} > {}", wf, rreal, x2, x);
                 }
             }
         }
 
-        println!(
-            "FPS: {}",
-            1_000_000_000u128 / (Instant::now() - t1).as_nanos()
-        );
+        println!("FPS: {}", 1_000u128 / (t1.elapsed()).as_millis().max(1));
     }
 }
