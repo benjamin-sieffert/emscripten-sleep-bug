@@ -1,21 +1,16 @@
-# Rust/SDL/Emscripten Template
+# `emscripten_sleep` Bug Reproducer
 
-Rust/SDL2 project template that can compile for both native and web targets.
+This reproducer is built with Rust/cargo. Installing Rust can be done via package manager or https://rustup.rs/ .
 
-## How to run
+A simple build is executed via `cargo build --target wasm32-unknown-emscripten --release` and will put the artifacts under `target/wasm32-unknown-emscripten/release`.
 
-### Web
+The `./dev-server.py` can be used to automatically copy all required files into `web/` and serve them.
 
-1. [Install Emscripten](https://emscripten.org/docs/getting_started/downloads.html)
-2. Activate Emscripten (`source ./emsdk_env.sh`)
-3. Run `./dev_server` to compile and set up a little webserver.
+## Changing build parameters
 
-It'll automatically recompile and host whenever you make changes in `./src`.
+The file `build.rs` configures the options that `emcc` is called with when building.
 
-### Native
+`emcc` is always taken from `$PATH` and will then use its own `.emscripten` to find all the other pieces of the wasm pipeline.
 
-Run `cargo run`
 
-## How to use
 
-This project is designed so that you can clone this repo, delete `./src/game.rs`, tweak `./src/index.html`, and drop in your own game code.  Have fun!

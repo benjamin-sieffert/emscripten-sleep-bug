@@ -11,10 +11,7 @@ use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 
 use std::path::Path;
-use std::thread;
-use std::time::Duration;
-use std::time::Instant;
-use std::time::SystemTime;
+use std::time::*;
 
 fn main() {
     #[cfg(target_os = "emscripten")]
@@ -95,24 +92,28 @@ fn main() {
         if frame_time < u32::MAX as u128 {
             let fps = 1_000u32 / 60u32;
             if fps > frame_time as u32 {
-                let x = SystemTime::now()
-                    .duration_since(SystemTime::UNIX_EPOCH)
-                    .unwrap()
-                    .as_millis();
-                let wf = fps - frame_time as u32;
+                let sleep_for = fps - frame_time as u32;
+                let sleep_start = Instant::now();
+
                 #[cfg(target_os = "emscripten")]
-                emscripten::sleep(wf);
+                emscripten::sleep(sleep_for);
+
                 #[cfg(not(target_os = "emscripten"))]
-                thread::sleep(Duration::from_millis(wf as u64));
+                {
+                    std::thread::sleep(Duration::from_millis(sleep_for as u64));
+                }
 
-                let x2 = SystemTime::now()
-                    .duration_since(SystemTime::UNIX_EPOCH)
-                    .unwrap()
-                    .as_millis();
-
-                let rreal = (x2 - x) as u32;
-                if rreal != wf {
-                    println!("wanted {}, got {}  --- {} > {}", wf, rreal, x2, x);
+                let elapsed = sleep_start.elapsed().as_millis() as u32;
+                if elapsed > sleep_for {
+                    eprintln!(
+                        "slept too long! wanted to sleep for {}, but slept for {}",
+                        sleep_for, elapsed
+                    );
+                } else if elapsed < sleep_for {
+                    println!(
+                        "woke up too early! wanted to sleep for {}, but slept for {}",
+                        sleep_for, elapsed
+                    );
                 }
             }
         }
