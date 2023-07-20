@@ -1,5 +1,5 @@
 web:
-	cargo build --target wasm32-unknown-emscripten --release
+	cargo -Z build-std build --target wasm32-unknown-emscripten --release
 
 native:
 	cargo build --release
