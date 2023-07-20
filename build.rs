@@ -12,6 +12,7 @@ fn main() {
         // "USE_SDL_TTF=2",
         // "ALLOW_MEMORY_GROWTH=1",
         "ASYNCIFY=2",
+        "EXIT_RUNTIME=1",
     ];
 
     for x in link_args {
