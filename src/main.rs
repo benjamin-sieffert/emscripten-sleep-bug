@@ -17,7 +17,9 @@ fn main() {
                                  //emscripten::exec("let spinner = document.getElementById('spinner'); spinner.remove();");
     }
 
+    let mut frame = 0;
     'mainloop: loop {
+        frame += 1;
         let t1 = Instant::now();
 
         let frame_time = t1.elapsed().as_millis();
@@ -46,7 +48,7 @@ fn main() {
                         continue;
                     }
 
-                    if elapsed > sleep_for {
+                    if elapsed > (sleep_for + 8) {
                         eprintln!(
                             "slept too long! wanted to sleep for {}, but slept for {}",
                             sleep_for, elapsed
@@ -65,6 +67,8 @@ fn main() {
             }
         }
 
-        println!("FPS: {}", 1_000u128 / (t1.elapsed()).as_millis().max(1));
+        if frame % 64 == 0 {
+            println!("FPS: {}", 1_000u128 / (t1.elapsed()).as_millis().max(1));
+        }
     }
 }
